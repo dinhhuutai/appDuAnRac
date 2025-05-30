@@ -3,6 +3,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { WeightProvider } from './src/contexts/WeightContext';
 import MainNavigator from './src/MainNavigator';
 import LoadingOverlay from './src/components/LoadingOverlay'; // loading khi chưa xác định xong
 
@@ -35,9 +36,11 @@ const App = () => {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <NavigationContainer>
-          <MainNavigator isAppFirstLaunched={isAppFirstLaunched} />
-        </NavigationContainer>
+        <WeightProvider>
+          <NavigationContainer>
+            <MainNavigator isAppFirstLaunched={isAppFirstLaunched} />
+          </NavigationContainer>
+        </WeightProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

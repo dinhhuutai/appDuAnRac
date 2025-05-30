@@ -1,14 +1,20 @@
-// import React, { useEffect, useState } from 'react';
-// import { View, Text, TouchableOpacity, Switch, FlatList, StyleSheet, Alert, ActivityIndicator, StatusBar } from 'react-native';
+
+
+// import React, { useEffect, useState, useContext } from 'react';
+// import {
+//   View, Text, TouchableOpacity, Switch, FlatList,
+//   StyleSheet, Alert, ActivityIndicator, StatusBar, PermissionsAndroid, Platform
+// } from 'react-native';
 // import { BleManager } from 'react-native-ble-plx';
 // import { Buffer } from 'buffer';
 // import Icon from 'react-native-vector-icons/Feather';
-// import { COLORS } from './OnboardingScreen';
+// import { WeightContext } from '../contexts/WeightContext';
+
+// const SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb";
+// const CHARACTERISTIC_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
+// const BLE_DEVICE_NAME = "ESP32_SCALE";
 
 // const manager = new BleManager();
-
-// const SERVICE_UUID = "12345678-1234-5678-1234-56789abcdef0";        // ← Thay bằng UUID thật
-// const CHARACTERISTIC_UUID = "abcdef01-1234-5678-1234-56789abcdef0"; // ← Thay bằng UUID thật
 
 // const BluetoothScreen = () => {
 //   const [isScanning, setIsScanning] = useState(false);
@@ -16,14 +22,31 @@
 //   const [devices, setDevices] = useState({});
 //   const [receivedData, setReceivedData] = useState("");
 
+//   const { setWeight } = useContext(WeightContext);
+
+//   useEffect(() => {
+//     requestPermissions();
+//     return () => manager.destroy();
+//   }, []);
+
 //   useEffect(() => {
 //     if (bluetoothEnabled) startScan();
 //     else stopScan();
-
-//     return () => {
-//       manager.stopDeviceScan();
-//     };
 //   }, [bluetoothEnabled]);
+
+//   const requestPermissions = async () => {
+//     if (Platform.OS === 'android') {
+//       const granted = await PermissionsAndroid.requestMultiple([
+//         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+//         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+//         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+//       ]);
+//       const allGranted = Object.values(granted).every(val => val === PermissionsAndroid.RESULTS.GRANTED);
+//       if (!allGranted) {
+//         Alert.alert('Quyền bị từ chối', 'Ứng dụng cần quyền Bluetooth và vị trí để hoạt động.');
+//       }
+//     }
+//   };
 
 //   const startScan = () => {
 //     setIsScanning(true);
@@ -31,13 +54,16 @@
 
 //     manager.startDeviceScan(null, null, (error, device) => {
 //       if (error) {
-//         Alert.alert('Lỗi', error.message);
+//         Alert.alert('Lỗi quét', error.message);
 //         setIsScanning(false);
 //         return;
 //       }
 
-//       if (device?.name?.includes('THLA-SCALE')) {
+//       if (device?.name === BLE_DEVICE_NAME) {
 //         setDevices(prev => ({ ...prev, [device.id]: device }));
+//         manager.stopDeviceScan();
+//         setIsScanning(false);
+//         connectToDevice(device);
 //       }
 //     });
 
@@ -57,41 +83,39 @@
 //       const connectedDevice = await manager.connectToDevice(device.id);
 //       await connectedDevice.discoverAllServicesAndCharacteristics();
 
-//       // Subcribe dữ liệu
-//       connectedDevice.monitorCharacteristicForService(
+//       const characteristic = await connectedDevice.readCharacteristicForService(
 //         SERVICE_UUID,
-//         CHARACTERISTIC_UUID,
-//         (error, characteristic) => {
-//           if (error) {
-//             console.log("Lỗi khi nhận notify:", error.message);
-//             return;
-//           }
-//           const base64 = characteristic?.value;
-//           if (base64) {
-//             const decoded = Buffer.from(base64, 'base64').toString('utf-8');
-//             setReceivedData(decoded);
-//             console.log("Dữ liệu mới:", decoded);
-//           }
-//         }
+//         CHARACTERISTIC_UUID
 //       );
 
-//       Alert.alert('Kết nối thành công', `Đã kết nối với ${device.name}`);
+//       if (characteristic?.value) {
+//         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+//         setReceivedData(decoded);
+//         setWeight(decoded);
+//         console.log("Dữ liệu nhận được:", decoded);
+//         Alert.alert("Thành công", `Kết nối tới ${device.name}. Dữ liệu: ${decoded}`);
+//       } else {
+//         Alert.alert("Không có dữ liệu", "Không đọc được dữ liệu từ ESP32.");
+//       }
+
 //     } catch (err) {
-//       Alert.alert('Lỗi', `Không thể kết nối: ${err.message}`);
+//       Alert.alert('Lỗi kết nối', err.message);
 //     }
 //   };
+
+
 
 //   return (
 //     <View style={styles.container}>
 //       <StatusBar backgroundColor="transparent" translucent barStyle="dark-content" />
-//       <Icon name="bluetooth" size={80} color='#7BBFF6' />
+//       <Icon name="bluetooth" size={80} color="#7BBFF6" />
 //       <Text style={styles.title}>Kết nối Bluetooth</Text>
 
 //       <View style={styles.row}>
-//         <Text style={styles.label}>Thiết bị</Text>
+//         <Text style={styles.label}>Bluetooth</Text>
 //         <Switch
 //           value={bluetoothEnabled}
-//           onValueChange={val => setBluetoothEnabled(val)}
+//           onValueChange={setBluetoothEnabled}
 //           trackColor={{ false: '#ccc', true: '#76EE59' }}
 //         />
 //       </View>
@@ -120,7 +144,7 @@
 //       )}
 
 //       <TouchableOpacity style={styles.scanBtn} onPress={startScan}>
-//         {isScanning ? <ActivityIndicator color={COLORS.primary} /> : (
+//         {isScanning ? <ActivityIndicator color="#007AFF" /> : (
 //           <>
 //             <Icon name="refresh-cw" size={16} />
 //             <Text style={{ marginLeft: 6 }}>Quét lại</Text>
@@ -166,7 +190,7 @@
 //     justifyContent: 'space-between',
 //   },
 //   connectBtn: {
-//     backgroundColor: COLORS.primary,
+//     backgroundColor: '#007AFF',
 //     paddingHorizontal: 12,
 //     paddingVertical: 6,
 //     borderRadius: 6,
@@ -185,7 +209,7 @@
 //     shadowRadius: 6,
 //   },
 //   dataBox: {
-//     marginTop: 24,
+//     marginTop: 10,
 //     padding: 16,
 //     backgroundColor: '#eef',
 //     borderRadius: 12,
@@ -194,7 +218,7 @@
 // });
 
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, Switch, FlatList,
   StyleSheet, Alert, ActivityIndicator, StatusBar, PermissionsAndroid, Platform
@@ -202,6 +226,7 @@ import {
 import { BleManager } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import Icon from 'react-native-vector-icons/Feather';
+import { WeightContext } from '../contexts/WeightContext';
 
 const SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
@@ -214,10 +239,35 @@ const BluetoothScreen = () => {
   const [bluetoothEnabled, setBluetoothEnabled] = useState(true);
   const [devices, setDevices] = useState({});
   const [receivedData, setReceivedData] = useState("");
+  const { setWeight } = useContext(WeightContext);
+
+  const [connectedDevice, setConnectedDevice] = useState(null);
+
+  const deviceRef = useRef(null);
+  const subscriptionRef = useRef(null);
+  const scanStoppedRef = useRef(false);
+
+  useEffect(() => {
+    // Clean up khi thoát màn hình
+    return () => {
+      if (connectedDevice) {
+        connectedDevice.cancelConnection();
+      }
+      manager.destroy();
+    };
+  }, [connectedDevice]);
 
   useEffect(() => {
     requestPermissions();
-    return () => manager.destroy();
+    manager.state().then(state => {
+      if (state !== 'PoweredOn') setBluetoothEnabled(false);
+    });
+
+    return () => {
+      if (subscriptionRef.current) subscriptionRef.current.remove();
+      if (deviceRef.current) deviceRef.current.cancelConnection();
+      manager.destroy();
+    };
   }, []);
 
   useEffect(() => {
@@ -240,18 +290,21 @@ const BluetoothScreen = () => {
   };
 
   const startScan = () => {
+    if (isScanning) return;
+    scanStoppedRef.current = false;
     setIsScanning(true);
     setDevices({});
 
     manager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         Alert.alert('Lỗi quét', error.message);
-        setIsScanning(false);
+        stopScan();
         return;
       }
 
-      if (device?.name === BLE_DEVICE_NAME) {
+      if (device?.name === BLE_DEVICE_NAME && !scanStoppedRef.current) {
         setDevices(prev => ({ ...prev, [device.id]: device }));
+        scanStoppedRef.current = true;
         manager.stopDeviceScan();
         setIsScanning(false);
         connectToDevice(device);
@@ -259,8 +312,10 @@ const BluetoothScreen = () => {
     });
 
     setTimeout(() => {
-      manager.stopDeviceScan();
-      setIsScanning(false);
+      if (!scanStoppedRef.current) {
+        manager.stopDeviceScan();
+        setIsScanning(false);
+      }
     }, 5000);
   };
 
@@ -269,29 +324,36 @@ const BluetoothScreen = () => {
     setIsScanning(false);
   };
 
+  
   const connectToDevice = async (device) => {
     try {
       const connectedDevice = await manager.connectToDevice(device.id);
       await connectedDevice.discoverAllServicesAndCharacteristics();
 
-      const characteristic = await connectedDevice.readCharacteristicForService(
+      const characteristic = await connectedDevice.monitorCharacteristicForService(
         SERVICE_UUID,
-        CHARACTERISTIC_UUID
+        CHARACTERISTIC_UUID,
+        (error, characteristic) => {
+          if (error) {
+            console.error("Lỗi nhận dữ liệu:", error.message);
+            return;
+          }
+
+          if (characteristic?.value) {
+            const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+            setReceivedData(decoded);
+            setWeight(decoded);
+            console.log("Đã nhận qua notify:", decoded);
+          }
+        }
       );
 
-      if (characteristic?.value) {
-        const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-        setReceivedData(decoded);
-        console.log("Dữ liệu nhận được:", decoded);
-        Alert.alert("Thành công", `Kết nối tới ${device.name} và đọc dữ liệu.`);
-      } else {
-        Alert.alert("Không có dữ liệu", "Không đọc được dữ liệu từ ESP32.");
-      }
-
+      Alert.alert("Thành công", `Đã kết nối tới ${device.name}`);
     } catch (err) {
-      Alert.alert('Lỗi kết nối', err.message);
+      Alert.alert("Lỗi kết nối", err.message);
     }
   };
+
 
   return (
     <View style={styles.container}>
@@ -397,7 +459,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   dataBox: {
-    marginTop: 24,
+    marginTop: 20,
     padding: 16,
     backgroundColor: '#eef',
     borderRadius: 12,
