@@ -123,21 +123,21 @@ const ScanScreen = () => {
 
       let khoiLuongTmp = parseFloat(khoiLuong);
 
-      if (jsonData?.t === 'Giẻ lau có chứa thành phần nguy hại') {
-        khoiLuongTmp -= 1;
-      } else if (jsonData?.t === 'Vụn logo') {
-        khoiLuongTmp -= 1;
-      } else if (jsonData?.t === 'Mực in thải') {
-        khoiLuongTmp -= 0.45;
-      } else if (jsonData?.t === 'Keo bàn thải') {
-        khoiLuongTmp -= 1;
-      } else if (jsonData?.t === 'Băng keo dính mực') {
-        khoiLuongTmp -= 0.8;
-      } else if (jsonData?.t === 'Rác sinh hoạt') {
-        khoiLuongTmp -= 1;
-      } else if (jsonData?.t === 'Lụa căng khung') {
-        khoiLuongTmp -= 1;
-      }
+      // if (jsonData?.t === 'Giẻ lau có chứa thành phần nguy hại') {
+      //   khoiLuongTmp -= 1;
+      // } else if (jsonData?.t === 'Vụn logo') {
+      //   khoiLuongTmp -= 1;
+      // } else if (jsonData?.t === 'Mực in thải') {
+      //   khoiLuongTmp -= 0.45;
+      // } else if (jsonData?.t === 'Keo bàn thải') {
+      //   khoiLuongTmp -= 1;
+      // } else if (jsonData?.t === 'Băng keo dính mực') {
+      //   khoiLuongTmp -= 0.8;
+      // } else if (jsonData?.t === 'Rác sinh hoạt') {
+      //   khoiLuongTmp -= 1;
+      // } else if (jsonData?.t === 'Lụa căng khung') {
+      //   khoiLuongTmp -= 1;
+      // }
       
       khoiLuongTmp = Math.max(khoiLuongTmp, 0);
 
