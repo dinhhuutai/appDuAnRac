@@ -93,7 +93,14 @@ useEffect(() => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const dateStr = selectedDate.toISOString(); // gửi ISO string cho server
+
+      const year = selectedDate.getFullYear();
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = selectedDate.getDate().toString().padStart(2, '0');
+
+      const dateStr = `${year}-${month}-${day}`;
+
+      //const dateStr = selectedDate.toISOString().split('T')[0]; // gửi ISO string cho server
       const response = await fetch(`https://duanrac-api-node-habqhehnc6a2hkaq.southeastasia-01.azurewebsites.net/history?userID=${user.userID}&date=${dateStr}`);
       if (response.ok) {
         const data = await response.json();
@@ -105,7 +112,7 @@ useEffect(() => {
           wasteType: item.trashName,
           weight: item.weightKg + ' kg',
           // Chuyển thời gian từ UTC sang giờ VN
-          timestamp: moment.utc(item.weighingTime).tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY - HH:mm'),
+          timestamp: moment.utc(item.weighingTime).format('DD/MM/YYYY - HH:mm'),
         }));
         setHistoryData(formattedData);
       } else {

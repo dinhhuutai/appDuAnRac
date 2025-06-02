@@ -6,6 +6,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { WeightProvider } from './src/contexts/WeightContext';
 import MainNavigator from './src/MainNavigator';
 import LoadingOverlay from './src/components/LoadingOverlay'; // loading khi chưa xác định xong
+import { BluetoothProvider } from './src/contexts/BluetoothContext';
 
 const App = () => {
   const [isAppFirstLaunched, setIsAppFirstLaunched] = useState(null);
@@ -36,11 +37,13 @@ const App = () => {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <WeightProvider>
-          <NavigationContainer>
-            <MainNavigator isAppFirstLaunched={isAppFirstLaunched} />
-          </NavigationContainer>
-        </WeightProvider>
+        <BluetoothProvider>
+          <WeightProvider>
+            <NavigationContainer>
+              <MainNavigator isAppFirstLaunched={isAppFirstLaunched} />
+            </NavigationContainer>
+          </WeightProvider>
+        </BluetoothProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
