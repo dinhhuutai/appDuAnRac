@@ -58,6 +58,7 @@ const ScanScreen = () => {
   const [openDatePicker, setOpenDatePicker] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
 
+  const [wrongTeamModal, setWrongTeamModal] = useState(false);
   const [confirmContinueModalVisible, setConfirmContinueModalVisible] = useState(false);
   
   const [teamMembers, setTeamMembers] = useState([]);
@@ -70,7 +71,7 @@ const ScanScreen = () => {
         .then((data) => {
           setTeamMembers(data)
           if(teamMembers.length === 0) {
-            setSelectedMember(user?.userName);
+            setSelectedMember(user?.fullName);
           }
         })
         .catch((err) => {
@@ -134,19 +135,29 @@ const ScanScreen = () => {
     requestPermissionAsync();
   }, [requestPermission]);
 
-  const isCameraActive = device != null && hasPermission && !modalVisible;
+  const isCameraActive = device != null && hasPermission && !modalVisible && !wrongTeamModal && !confirmContinueModalVisible;
 
   const codeScanner = useCodeScanner({
     codeTypes: ['qr', 'ean-13'],
     onCodeScanned: (codes: Code[]) => {
       const scannedUrl = decodeURIComponent(codes[0].value);
-      if (!scannedUrl || jsonData !== null || modalVisible) return;
+      if (!scannedUrl || jsonData !== null || modalVisible || wrongTeamModal || confirmContinueModalVisible) return;
 
       try {
         const parsedData = JSON.parse(scannedUrl);
         setJsonData(parsedData);
-        setModalVisible(true);
-        console.log('📷 QR quét được:', parsedData);
+
+        if (user?.role === 'admin') {
+          setModalVisible(true);
+        } else if (user?.role === 'user') {
+          const userTeam = user?.fullName?.toLowerCase(); // hoặc user.teamName nếu có
+          const qrTeam = parsedData?.d?.toLowerCase();
+          if (qrTeam && userTeam && qrTeam.includes(userTeam)) {
+            setModalVisible(true);
+          } else {
+            setWrongTeamModal(true);
+          }
+        }
       } catch (error) {
         console.log('Lỗi khi parse JSON:', error);
       }
@@ -370,14 +381,14 @@ const ScanScreen = () => {
             />
 
             <View className="mb-4">
-              <Text className="text-base text-gray-800 mb-1">Người thu gom:</Text>
+              <Text className="text-base text-gray-800 mb-1">Người cân rác:</Text>
               {teamMembers.length > 0 ? (
                 <View className="bg-white border border-gray-300 rounded-xl">
                   <Picker
                     selectedValue={selectedMember}
                     onValueChange={(itemValue) => setSelectedMember(itemValue)}
                   >
-                    <Picker.Item label="Chọn người thu gom" value="" />
+                    <Picker.Item label="Người cân rác" value="" />
                     {teamMembers.map((member) => (
                       <Picker.Item
                         key={member.id}
@@ -455,6 +466,32 @@ const ScanScreen = () => {
         </View>
       </Modal>
 
+      <Modal
+        visible={wrongTeamModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setWrongTeamModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmModal}>
+            <Text style={styles.confirmText}>🐤 Ối dồi ôi! Mã QR này không thuộc tổ của bạn rồi 😅 Quét lại hen!</Text>
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#F93333' }]}
+                onPress={() => {
+                  setWrongTeamModal(false);
+                  setKhoiLuong(0);
+                  setJsonData(null);
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={{ color: COLORS.white }}>Quét lại</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -465,6 +502,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  confirmModal: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    marginHorizontal: 32,
+    alignItems: 'center',
+    elevation: 10,
+  },
+  confirmText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    marginHorizontal: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: COLORS.bg_button || '#007AFF',
+  },
+
 
   scanText: {
     color: '#fff',
